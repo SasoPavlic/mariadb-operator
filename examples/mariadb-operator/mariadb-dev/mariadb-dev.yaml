@@ -1,0 +1,64 @@
+# 1. Namespace for development MariaDB
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mariadb-dev
+---
+# 2. Root credentials for MariaDB operator
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mariadb-root-secret
+  namespace: mariadb-dev
+stringData:
+  # Kubernetes will base64-encode these for you
+  rootUser:     "root"
+  rootPassword: "DevMariaPass123!"
+---
+# 3. Application user credentials for development
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mariadb-app-secret
+  namespace: mariadb-dev
+stringData:
+  user:     "dev_user"
+  password: "DevUserPass123!"
+---
+# 4. MariaDB custom resource for development
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: MariaDB
+metadata:
+  name: mariadb-dev
+  namespace: mariadb-dev
+spec:
+  # Single instance (no HA)
+  replicas: 1
+
+  # MariaDB listen port (default: 3306)
+  port: 3306
+
+  # Root credentials
+  rootPasswordSecretKeyRef:
+    name: mariadb-root-secret
+    key: rootPassword
+
+  # Initial development database and user
+  database: dev_db
+  username: dev_user
+  passwordSecretKeyRef:
+    name: mariadb-app-secret
+    key: password
+
+  # Storage managed by operator (PVC created dynamically)
+  storage:
+    size: 1Gi
+    storageClassName: local-path
+
+  # Expose via LoadBalancer so you can connect externally
+  service:
+    type: LoadBalancer
+    # Optional: pin to a specific MetalLB pool if you have more than one
+    metadata:
+      annotations:
+        metallb.io/address-pool: default

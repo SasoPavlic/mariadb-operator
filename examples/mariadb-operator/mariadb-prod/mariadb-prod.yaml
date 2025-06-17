@@ -1,0 +1,71 @@
+# 1. Namespace for production MariaDB
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mariadb-prod
+---
+# 2. Root credentials for MariaDB operator
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mariadb-root-secret
+  namespace: mariadb-prod
+stringData:
+  # Kubernetes will base64-encode these for you
+  rootUser:     "root"
+  rootPassword: "DatabaseMaria1395L!3003"    # ensure strong password
+---
+# 3. Application user credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mariadb-app-secret
+  namespace: mariadb-prod
+stringData:
+  user:     "kvaltko_be"
+  password: "KvaltkoMaria5921#@X"
+---
+# 4. MariaDB cluster custom resource
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: MariaDB
+metadata:
+  name: mariadb-prod
+  namespace: mariadb-prod
+spec:
+  replicas: 3
+
+  # MariaDB listen port (default: 3306)
+  port: 3306
+
+  # Enable Galera multi-master mode
+  galera:
+    enabled: true
+    # Optional: specify SST method
+    # sst: mariabackup
+
+  # Root credentials
+  rootPasswordSecretKeyRef:
+    name: mariadb-root-secret
+    key: rootPassword
+
+  # Initial application DB and user
+  database: kvaltko_db
+  username: kvaltko_be
+  passwordSecretKeyRef:
+    name: mariadb-app-secret
+    key: password
+
+  # Storage managed by operator (PVC created dynamically)
+  storage:
+    size: 15Gi
+    storageClassName: local-path
+
+  # Kubernetes Service of type LoadBalancer
+  service:
+    type: LoadBalancer
+    # Optional: pin to a specific MetalLB address pool,
+    # but still let MetalLB pick an available IP from that pool.
+    # Remove this metadata block entirely if you only have one pool.
+    metadata:
+      annotations:
+        metallb.io/address-pool: default

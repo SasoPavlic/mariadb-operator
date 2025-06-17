@@ -1,0 +1,42 @@
+# mariadb-operator-values.yaml
+
+# 1. Enable high-availability for the operator itself:
+ha:
+  enabled: true
+  replicas: 3
+
+# 2. Ensure operator pods disperse across distinct nodes:
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+                - mariadb-operator       # Chart default name
+            - key: app.kubernetes.io/instance
+              operator: In
+              values:
+                - mariadb-operator       # Release name
+        topologyKey: kubernetes.io/hostname
+
+# 3. PodDisruptionBudget to keep ≥2 operator pods up at all times:
+pdb:
+  enabled: true
+  maxUnavailable: 1
+
+# 4. Toleration for master-node taint so pods can land on control-planes:
+tolerations:
+  - key: "node-role.kubernetes.io/master"
+    operator: "Exists"
+    effect: "NoSchedule"
+
+# (Optional) You can also tune resource requests/limits if needed:
+# resources:
+#   requests:
+#     cpu: "200m"
+#     memory: "128Mi"
+#   limits:
+#     cpu: "500m"
+#     memory: "256Mi"
