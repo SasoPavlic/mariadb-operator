@@ -60,12 +60,9 @@ spec:
     size: 15Gi
     storageClassName: local-path
 
-  # Kubernetes Service of type LoadBalancer
+  # Expose via LoadBalancer so you can connect externally
   service:
     type: LoadBalancer
-    # Optional: pin to a specific MetalLB address pool,
-    # but still let MetalLB pick an available IP from that pool.
-    # Remove this metadata block entirely if you only have one pool.
     metadata:
       annotations:
-        metallb.io/address-pool: default
+        metallb.universe.tf/loadBalancerIPs: "192.168.0.246"
